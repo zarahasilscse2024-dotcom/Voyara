@@ -1,0 +1,3 @@
+export default function VoyaraLogo({ compact = false }) {
+  return <span className={`voyara-logo ${compact ? 'compact' : ''}`} aria-label="Voyara"><svg viewBox="0 0 58 46" role="img" aria-hidden="true"><path d="M28 39C22 31 9 28 6 16c-2-8 5-13 12-9 6 3 9 10 10 17 1-7 4-14 10-17 7-4 14 1 12 9-3 12-16 15-22 23Z"/><path d="M28 39 17 13M28 39 40 13"/><path d="M28 10v29"/></svg>{!compact && <strong>voyara</strong>}</span>
+}
