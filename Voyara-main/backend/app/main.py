@@ -1,7 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import ALLOWED_ORIGINS, GOOGLE_MAPS_API_KEY
 from app.database.connection import check_connection
+from app.auth.security import current_user
+from app.schemas.models import ProfileUpdateRequest
+from app.routes.auth import update_me
 from app.routes import auth, packages, features, management, chat
 
 app = FastAPI(title="Voyara API", version="1.0.0")
@@ -21,6 +24,22 @@ app.include_router(packages.router, prefix="/api")
 app.include_router(features.router, prefix="/api")
 app.include_router(management.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
+
+@app.on_event("startup")
+def startup_event():
+    try:
+        from seed import seed_if_empty
+        seed_if_empty()
+    except Exception:
+        pass
+
+@app.get("/api/me", tags=["auth"])
+def api_me(user=Depends(current_user)):
+    return user
+
+@app.patch("/api/me", tags=["auth"])
+def api_update_me(data: ProfileUpdateRequest, user=Depends(current_user)):
+    return update_me(data, user)
 
 @app.get("/")
 def root():

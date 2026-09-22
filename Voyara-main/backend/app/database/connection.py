@@ -23,5 +23,9 @@ def check_connection():
 def serialize(document):
     if not document:
         return None
-    document["id"] = str(document.pop("_id"))
-    return document
+    doc = dict(document)
+    if "_id" in doc:
+        doc["id"] = str(doc.pop("_id"))
+    doc.pop("password_hash", None)
+    return doc
+
