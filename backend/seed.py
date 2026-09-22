@@ -13,20 +13,35 @@ IMAGES = {
     "Kerala": "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=1200&q=80",
 }
 
-def seed():
-    for collection in [db.users, db.operators, db.packages, db.reviews]: collection.delete_many({})
+def seed_data(clear=False):
+    if clear:
+        for collection in [db.users, db.operators, db.packages, db.reviews]:
+            collection.delete_many({})
+
+    operator_ids = []
     operators = [
         {"name": "WanderNest Travels", "description": "Local, human-scale journeys with thoughtful guides.", "verified": True, "rating": 4.7, "contact": "hello@wandernest.example.com"},
         {"name": "ExploreX Holidays", "description": "Comfort-first itineraries for curious travelers.", "verified": True, "rating": 4.8, "contact": "trips@explorex.example.com"},
         {"name": "BlueSky Tours", "description": "Flexible adventures with transparent inclusions.", "verified": True, "rating": 4.5, "contact": "team@bluesky.example.com"},
     ]
-    operator_result = db.operators.insert_many(operators)
-    operator_ids = list(operator_result.inserted_ids)
-    user_result = db.users.insert_many([
-        {"full_name": "WanderNest Travels", "email": "operator@example.com", "phone": "9876543210", "role": "operator", "verified": True, "password_hash": hash_password("VoyaraDemo123")},
-        {"full_name": "Voyara Admin", "email": "admin@example.com", "phone": "9876543211", "role": "admin", "verified": True, "password_hash": hash_password("VoyaraAdmin123")},
-    ])
-    db.users.update_one({"_id": user_result.inserted_ids[0]}, {"$set": {"operator_id": str(operator_ids[0])}})
+
+    if db.operators.count_documents({}) == 0:
+        operator_result = db.operators.insert_many(operators)
+        operator_ids = list(operator_result.inserted_ids)
+    else:
+        existing_ops = list(db.operators.find())
+        operator_ids = [op["_id"] for op in existing_ops]
+        if len(operator_ids) < len(operators):
+            operator_ids.extend([operator_ids[0]] * (len(operators) - len(operator_ids)))
+
+    if db.users.count_documents({"email": "operator@example.com"}) == 0:
+        op_user = {"full_name": "WanderNest Travels", "email": "operator@example.com", "phone": "9876543210", "role": "operator", "verified": True, "password_hash": hash_password("VoyaraDemo123"), "operator_id": str(operator_ids[0])}
+        db.users.insert_one(op_user)
+
+    if db.users.count_documents({"email": "admin@example.com"}) == 0:
+        admin_user = {"full_name": "Voyara Admin", "email": "admin@example.com", "phone": "9876543211", "role": "admin", "verified": True, "password_hash": hash_password("VoyaraAdmin123")}
+        db.users.insert_one(admin_user)
+
     rows = [
         ("Ooty Budget Escape", "Ooty", 9999, 2, "Nature", 4.2, 0, ["Hotel", "Sightseeing"], "Budget hotel", "Shared cab", "Breakfast", ["Sightseeing"]),
         ("Ooty Premium Holiday", "Ooty", 16999, 4, "Nature", 4.8, 1, ["Hotel", "Meals", "Transport", "Sightseeing"], "Heritage resort", "Private car", "All meals", ["Sightseeing", "Trekking"]),
@@ -53,12 +68,30 @@ def seed():
         ("Kerala Coastal Comfort", "Kerala", 24999, 5, "Beach", 4.7, 1, ["Boutique stay", "Breakfast", "Houseboat"], "Coastal boutique stay", "Private car", "Breakfast", ["Beach", "Food", "Water"]),
         ("Kerala Houseboat Escape", "Kerala", 42999, 6, "Culture", 4.9, 2, ["Houseboat", "All meals", "Private car"], "Private houseboat", "Private car", "All meals", ["Culture", "Food", "Water"]),
     ]
-    packages = []
-    for name, destination, price, duration, category, rating, operator_index, included, accommodation, transport, meals, activities in rows:
-        operator = operators[operator_index]
-        packages.append({"name": name, "destination": destination, "description": f"A considered {duration}-day {category.lower()} journey through {destination}.", "price": price, "duration": duration, "category": category, "operator_id": str(operator_ids[operator_index]), "operator_name": operator["name"], "operator_verified": True, "status": "Approved", "rating": rating, "review_count": 0, "images": [IMAGES[destination]], "itinerary": [{"title": "Arrive and settle in", "description": "Meet your local host and ease into the destination."}, {"title": "A day made for you", "description": "Explore with a balance of guided time and freedom."}], "included": included, "excluded": ["Flights", "Personal expenses"], "activities": activities, "accommodation": accommodation, "transport": transport, "meals": meals, "guide": "Local guide included", "insurance": "Optional travel insurance", "cancellation_policy": "Free cancellation up to 7 days before departure.", "created_at": datetime.utcnow()})
-    db.packages.insert_many(packages)
-    db.users.create_index("email", unique=True)
-    for field in ["destination", "category", "price", "operator_id", "rating"]: db.packages.create_index(field)
-    print("Seeded 3 verified operators and 24 cross-operator packages.")
+
+    if db.packages.count_documents({}) == 0:
+        packages = []
+        for name, destination, price, duration, category, rating, operator_index, included, accommodation, transport, meals, activities in rows:
+            operator = operators[operator_index]
+            packages.append({"name": name, "destination": destination, "description": f"A considered {duration}-day {category.lower()} journey through {destination}.", "price": price, "duration": duration, "category": category, "operator_id": str(operator_ids[operator_index]), "operator_name": operator["name"], "operator_verified": True, "status": "Approved", "rating": rating, "review_count": 0, "images": [IMAGES[destination]], "itinerary": [{"title": "Arrive and settle in", "description": "Meet your local host and ease into the destination."}, {"title": "A day made for you", "description": "Explore with a balance of guided time and freedom."}], "included": included, "excluded": ["Flights", "Personal expenses"], "activities": activities, "accommodation": accommodation, "transport": transport, "meals": meals, "guide": "Local guide included", "insurance": "Optional travel insurance", "cancellation_policy": "Free cancellation up to 7 days before departure.", "created_at": datetime.utcnow()})
+        db.packages.insert_many(packages)
+
+    try:
+        db.users.create_index("email", unique=True)
+        for field in ["destination", "category", "price", "operator_id", "rating"]:
+            db.packages.create_index(field)
+    except Exception:
+        pass
+    print("Seed complete: verified operators, demo users and packages ready.")
+
+def seed():
+    seed_data(clear=True)
+
+def seed_if_empty():
+    try:
+        if db.packages.count_documents({}) == 0:
+            seed_data(clear=False)
+    except Exception as e:
+        print(f"seed_if_empty check skipped: {e}")
+
 

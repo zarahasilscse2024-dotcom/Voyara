@@ -5,9 +5,13 @@ from app.config import MONGO_URI, DATABASE_NAME
 client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=1500)
 db = client[DATABASE_NAME]
 
-db.favorites.create_index([("user_id", 1), ("package_id", 1)], unique=True, name="user_package_favorite")
-db.bookings.create_index([("user_id", 1), ("created_at", -1)], name="user_bookings")
-db.bookings.create_index("package_id", name="package_bookings")
+try:
+    db.favorites.create_index([("user_id", 1), ("package_id", 1)], unique=True, name="user_package_favorite")
+    db.bookings.create_index([("user_id", 1), ("created_at", -1)], name="user_bookings")
+    db.bookings.create_index("package_id", name="package_bookings")
+except Exception:
+    pass
+
 
 def check_connection():
     try:
@@ -19,5 +23,9 @@ def check_connection():
 def serialize(document):
     if not document:
         return None
-    document["id"] = str(document.pop("_id"))
-    return document
+    doc = dict(document)
+    if "_id" in doc:
+        doc["id"] = str(doc.pop("_id"))
+    doc.pop("password_hash", None)
+    return doc
+

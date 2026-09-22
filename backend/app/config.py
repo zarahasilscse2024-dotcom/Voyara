@@ -5,11 +5,11 @@ try:
 except ImportError:
     pass
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI") or "mongodb://localhost:27017"
 DATABASE_NAME = os.getenv("DATABASE_NAME", "voyara")
+
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-only-change-this-secret")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-
 def _get_allowed_origins() -> list[str]:
     defaults = [
         "https://voyara-h7fj.vercel.app",

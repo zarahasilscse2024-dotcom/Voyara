@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
+from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from bson import ObjectId
 from app.config import JWT_SECRET, JWT_ALGORITHM
 from app.database.connection import db, serialize
-import bcrypt
 
+import bcrypt
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
 def hash_password(password: str) -> str:
