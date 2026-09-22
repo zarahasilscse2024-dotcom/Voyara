@@ -11,9 +11,16 @@ def get_collection():
             return db.packages
         if "trips" in names and db.trips.count_documents({}) > 0:
             return db.trips
+        # Auto-seed if database is empty
+        try:
+            from seed import seed_if_empty
+            seed_if_empty()
+        except Exception:
+            pass
     except Exception:
         pass
     return db.packages
+
 
 def normalize_package(doc):
     if not doc:
