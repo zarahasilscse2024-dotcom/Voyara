@@ -1,0 +1,6 @@
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import VoyaraLogo from './VoyaraLogo';
+import VoyaraChatbot from './VoyaraChatbot';
+
+export default function Layout({ children }) { const { user, logout } = useAuth(); const navigate = useNavigate(); return <><header className="nav"><Link to="/" className="brand"><VoyaraLogo /></Link><nav><NavLink to="/explore">Explore</NavLink><NavLink to="/compare">Compare</NavLink><NavLink to="/recommendations">For you</NavLink><NavLink to="/safety">Safety</NavLink></nav><div className="nav-actions">{user ? <><span className="user-greeting">Hi, {user.full_name}</span><Link to="/profile">Profile</Link><Link to="/bookings">Trips</Link><Link to="/favorites">Favorites</Link>{user.role === 'operator' && <Link to="/operator">Studio</Link>}{user.role === 'admin' && <Link to="/admin">Admin</Link>}<button className="text-button" onClick={() => { logout(); navigate('/'); }}>Log out</button></> : <><Link to="/login">Log in</Link><Link className="button small" to="/register">Join Voyara</Link></>}</div></header><main>{children}</main><VoyaraChatbot /><footer><VoyaraLogo /><span>Travel further, with better context.</span><span>© 2026 Voyara</span></footer></>; }
